@@ -1,0 +1,1 @@
+Get-ChildItem -Path '.\Dream Theater\' -Recurse | Where { $_.PSIsFile} | Select FullName

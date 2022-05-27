@@ -24,7 +24,7 @@ IF ($Exclude.Length -gt 0) {
 }
 
 # Get the files
-$getFilesExpression = "Get-ChildItem -File -Recurse -Path ""$($Directory)"" -Include $($Extensions)"
+$getFilesExpression = "Get-ChildItem -File -Recurse -Path $($Directory) -Include $($Extensions)"
 IF ($Exclude.Length -gt 0) {
     $getFilesExpression += " -Exclude $($Exclude)"
 }
@@ -37,12 +37,20 @@ IF ($files.Length -gt 1024) {
     return
 }
 
-# Build the command string.
+$previousDirectory = Get-Location
+$tempPath = [System.IO.Path]::GetTempPath()
+mkdir "$($tempPath)/maft"
+Set-Location "$($tempPath)/maft"
 $ffmpeg = "ffmpeg"
-Foreach ($file IN $files) {
-    $ffmpeg = "$($ffmpeg) -i ""$($file.FullName)"""
+for ($i = 0; $i -lt $files.Length; $i++) { 
+    New-Item -ItemType HardLink -Path "$($i)" -Target "$($files[$i].FullName)"
+    $ffmpeg = "$($ffmpeg) -i $($i)"
 }
 
-$ffmpeg = $ffmpeg + " -filter_complex amix=inputs=$($files.Length):duration=longest ""$($Output)"""
+$ffmpeg = $ffmpeg + " -filter_complex amix=inputs=$($files.Length):duration=longest ""$([IO.Path]::Combine($previousDirectory, $Output))"""
 
-Invoke-Expression $ffmpeg
+Invoke-Expression $ffmpeg | Out-Null
+
+#Remove-Item -Path "$($tempPath)/maft" -Recurse
+
+#Set-Location $previousDirectory

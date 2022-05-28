@@ -7,7 +7,7 @@
 
 - `-Directory` specifies the directory to search in for audio files.
 - `-Output` specifies the output filename with extension (and path if you don't want to put it in the directory where you run the script).
-- `-Extensions` is a comma delimited list of extensions you want to include in the search (not wrapped in double quotes and without a leading period). This defaults to `mp3,wav,m4a`.
+- `-Extensions` is a comma delimited list of extensions you want to include in the search (not wrapped in double quotes and without a leading period). This defaults to `mp3,wav,m4a,wma`.
 - `-Exclude` is a comma delimited list of filenames you want to exclude in the search (each file name wrapped in double quotes). 
 
 ## Examples

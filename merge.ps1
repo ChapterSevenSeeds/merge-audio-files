@@ -4,7 +4,7 @@ param(
     [Parameter(Mandatory, HelpMessage = "The output filename")]
     [string]$Output,
     [Parameter(HelpMessage = "A comma delimited list of audio extensions to include (e.g. mp3,m4a,wav)")]
-    [array]$Extensions = ("mp3", "m4a", "wav"),
+    [array]$Extensions = ("mp3", "m4a", "wav", "wma"),
     [Parameter(HelpMessage = "A comma delimited list of files to exclude (filenames with spaces must be surrounded in quotes)")]
     [array]$Exclude
 )
@@ -24,7 +24,7 @@ IF ($Exclude.Length -gt 0) {
 }
 
 # Get the files
-$getFilesExpression = "Get-ChildItem -File -Recurse -Path $($Directory) -Include $($Extensions)"
+$getFilesExpression = "Get-ChildItem -File -Recurse -Path ""$($Directory)"" -Include $($Extensions)"
 IF ($Exclude.Length -gt 0) {
     $getFilesExpression += " -Exclude $($Exclude)"
 }
@@ -38,19 +38,20 @@ IF ($files.Length -gt 1024) {
 }
 
 $previousDirectory = Get-Location
-$tempPath = [System.IO.Path]::GetTempPath()
-mkdir "$($tempPath)/maft"
-Set-Location "$($tempPath)/maft"
-$ffmpeg = "ffmpeg"
+$tempPath = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), "maft")
+IF (!(Test-Path -Path $tempPath)) {
+    mkdir $tempPath
+}
+Set-Location $tempPath
+$ffmpegArgs = ""
 for ($i = 0; $i -lt $files.Length; $i++) { 
     New-Item -ItemType HardLink -Path "$($i)" -Target "$($files[$i].FullName)"
-    $ffmpeg = "$($ffmpeg) -i $($i)"
+    $ffmpegArgs = "$($ffmpegArgs) -i $($i)"
 }
 
-$ffmpeg = $ffmpeg + " -filter_complex amix=inputs=$($files.Length):duration=longest ""$([IO.Path]::Combine($previousDirectory, $Output))"""
+$ffmpegArgs = $ffmpegArgs + " -filter_complex amix=inputs=$($files.Length):duration=longest ""$([IO.Path]::Combine($previousDirectory, $Output))"""
 
-Invoke-Expression $ffmpeg | Out-Null
+Start-Process -FilePath "ffmpeg" -Wait -ArgumentList $ffmpegArgs
 
-#Remove-Item -Path "$($tempPath)/maft" -Recurse
-
-#Set-Location $previousDirectory
+Get-ChildItem -Path "$($tempPath)" -Recurse | Remove-Item
+Set-Location $previousDirectory

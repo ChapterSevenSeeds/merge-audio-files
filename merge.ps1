@@ -9,24 +9,24 @@ param(
     [array]$Exclude
 )
 
-# Change each extension to have an asterisk and a period before the name
+# Change each extension to have a period before the name and combine them into a disjunct regex
 for ($i = 0; $i -lt $Extensions.Length; $i++) { 
-    $Extensions[$i] = "*.$($Extensions[$i])"
+    $Extensions[$i] = ".$($Extensions[$i])"
 }
-$Extensions = [String]::Join(',', $Extensions)
+$Extensions = [String]::Join('|', $Extensions)
 
 IF ($Exclude.Length -gt 0) {
-    # Wrap each exclusion in double quotes.
+    # Wrap each exclusion in regex parenthesis and combine them into a disjunction
     for ($i = 0; $i -lt $Exclude.Length; $i++) { 
-        $Exclude[$i] = """$($Exclude[$i])"""
+        $Exclude[$i] = "($($Exclude[$i]))"
     }
-    $Exclude = [String]::Join(',', $Exclude)
+    $Exclude = [String]::Join('|', $Exclude)
 }
 
 # Get the files
-$getFilesExpression = "Get-ChildItem -File -Recurse -Path ""$($Directory)"" -Include $($Extensions)"
+$getFilesExpression = "Get-ChildItem -File -Recurse -LiteralPath '$($Directory)' | Where-Object { `$_.Extension -match ""$($Extensions)"" }"
 IF ($Exclude.Length -gt 0) {
-    $getFilesExpression += " -Exclude $($Exclude)"
+    $getFilesExpression += " | Where-Object {`$_.FullName -notmatch ""$($Exclude)""}"
 }
 $getFilesExpression += " | Select FullName"
 $files = Invoke-Expression $getFilesExpression
@@ -44,8 +44,8 @@ IF (!(Test-Path -Path $tempPath)) {
 }
 Set-Location $tempPath
 $ffmpegArgs = ""
-for ($i = 0; $i -lt $files.Length; $i++) { 
-    New-Item -ItemType HardLink -Path "$($i)" -Target "$($files[$i].FullName)"
+for ($i = 0; $i -lt $files.Length; $i++) {
+    New-Item -ItemType HardLink -Path "$($i)" -Target "$($files[$i].FullName.replace("]", "``]").replace("[", "``["))"
     $ffmpegArgs = "$($ffmpegArgs) -i $($i)"
 }
 

@@ -49,7 +49,7 @@ for ($i = 0; $i -lt $files.Length; $i++) {
     $ffmpegArgs = "$($ffmpegArgs) -i $($i)"
 }
 
-$ffmpegArgs = $ffmpegArgs + " -filter_complex amix=inputs=$($files.Length):duration=longest ""$([IO.Path]::Combine($previousDirectory, $Output))"""
+$ffmpegArgs = $ffmpegArgs + " -filter_complex amix=inputs=$($files.Length):duration=longest[out] -map [out]:a ""$([IO.Path]::Combine($previousDirectory, $Output))"""
 
 Start-Process -FilePath "ffmpeg" -Wait -ArgumentList $ffmpegArgs
 
